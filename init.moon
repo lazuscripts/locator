@@ -33,7 +33,7 @@ autoload = (path, tab={}) ->
 
 -- pass your migrations, it returns them + all sub-application migrations
 --  (legacy) see example config for how to specify to not include early migrations
-migrations = (app_migrations={}) ->
+make_migrations = (app_migrations={}) ->
   for item in *config
     ok, migrations = pcall -> require "#{item.path}.migrations"
     if ok
@@ -58,7 +58,7 @@ migrations = (app_migrations={}) ->
 -- return access to autoload and migrations functions,
 --  and metamethods for getting autoloaders
 return setmetatable {
-  :autoload, :migrations
+  :autoload, :make_migrations
 }, {
   __call: (t, here) ->
     if "init" == here\sub -4
