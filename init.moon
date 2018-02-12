@@ -57,11 +57,15 @@ make_migrations = (app_migrations={}) ->
 
 -- sub-applications can define custom functions in a `locator_config` file in
 --  their root directory. These functions are aggregated by name and called in
---  the order defined by the paths in the root locator_config
--- note: the root locator_config cannot define any of these
+--  the order defined by the paths in the root locator_config (with the root
+--  being called first)
 registry = setmetatable {}, {
   __index: (t, name) ->
     registered_functions = {}
+
+    if config[name]
+      insert registered_functions, config[name]
+
     for item in *config
       ok, register = pcall -> require "#{item.path}.locator_config"
       if ok and register[name]
