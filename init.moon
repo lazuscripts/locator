@@ -67,10 +67,13 @@ registry = setmetatable {}, {
       if ok and register[name]
         insert registered_functions, register[name]
 
-    t[name] = (...) ->
-      for i=1, #registered_functions-1
-        registered_functions[i](...)
-      return registered_functions[#registered_functions](...)
+    if #registered_functions > 0
+      t[name] = (...) ->
+        for i=1, #registered_functions-1
+          registered_functions[i](...)
+        return registered_functions[#registered_functions](...)
+    else
+      t[name] = ->
 
     return t[name]
 }
