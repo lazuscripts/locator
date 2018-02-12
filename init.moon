@@ -3,21 +3,21 @@ config = require "locator_config"
 import insert, sort from table
 
 -- locates and returns a module, or errors
---  if priority (path) specified, will check it before other paths
---  checks project root first, then each path specified in locator_config
-try_require = (path, priority) ->
-  if priority
-    ok, value = pcall -> require "#{priority}.#{path}"
+--  if a path is specified, it will be checked before other paths
+--  checks the project root, then each path specified in locator_config
+try_require = (name, path) ->
+  if path
+    ok, value = pcall -> require "#{path}.#{name}"
     return value if ok
 
-  ok, value = pcall -> require path
+  ok, value = pcall -> require name
   return value if ok
 
   for item in *config
-    ok, value = pcall -> require "#{item.path}.#{path}"
+    ok, value = pcall -> require "#{item.path}.#{name}"
     return value if ok
 
-  error "locator could not find '#{path}'"
+  error "locator could not find '#{name}'"
 
 -- works like Lapis's autoload, but
 --  includes trying sub-application paths & can be called to access a value
@@ -55,15 +55,16 @@ make_migrations = (app_migrations={}) ->
 
   return app_migrations
 
--- return access to autoload and migrations functions,
---  and metamethods for getting autoloaders
-return setmetatable {
-  :autoload, :make_migrations
-}, {
-  __call: (t, here) ->
+-- return access to autoload and make_migrations functions,
+--  a self-reference, and metamethods for getting autoloaders
+locator = {
+  locate: locator, :autoload, :make_migrations
+}
+return setmetatable locator, {
+  __call: (t, here="") ->
     if "init" == here\sub -4
       here = here\sub 1, -6
-    unless here
+    unless here\len! > 0
       here = ""
     return autoload here
 
