@@ -55,12 +55,32 @@ make_migrations = (app_migrations={}) ->
 
   return app_migrations
 
--- return access to autoload and make_migrations functions,
---  a self-reference, and metamethods for getting autoloaders
-locator = {
-  locate: locator, :autoload, :make_migrations
+-- sub-applications can define custom functions in a `locator_config` file in
+--  their root directory. These functions are aggregated by name and called in
+--  the order defined by the paths in the root locator_config
+-- note: the root locator_config cannot define any of these
+registry = setmetatable {}, {
+  __index: (t, name) ->
+    registered_functions = {}
+    for item in *config
+      ok, register = pcall -> require "#{item.path}.locator_config"
+      if ok and register[name]
+        insert registered_functions, register[name]
+
+    t[name] = (...) ->
+      for i=1, #registered_functions-1
+        registered_functions[i](...)
+      return registered_functions[#registered_functions](...)
+
+    return t[name]
 }
-return setmetatable locator, {
+
+-- public interface:
+--  functions: autoload, make_migrations
+--  tables: locate (locator alias), registry
+locator = setmetatable {
+  locate: locator, :autoload, :make_migrations, :registry
+}, {
   __call: (t, here="") ->
     if "init" == here\sub -4
       here = here\sub 1, -6
@@ -72,3 +92,5 @@ return setmetatable locator, {
     t[name] = autoload name
     return t[name]
 }
+
+return locator
