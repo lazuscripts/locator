@@ -5,29 +5,40 @@ import insert, sort from table
 -- locates and returns a module, or errors
 --  if a path is specified, it will be checked before other paths
 --  checks the project root, then each path specified in locator_config
-try_require = (name, path) ->
+locate = (name, path) ->
+  print "locate ->"
   if path
+    print "try '#{path}.#{name}'"
     ok, value = pcall -> require "#{path}.#{name}"
     return value if ok
 
+  print "try '#{name}'"
   ok, value = pcall -> require name
   return value if ok
 
   for item in *config
-    ok, value = pcall -> require "#{item.path}.#{name}"
+    if path
+      print "try '#{item.path}.#{path}.#{name}'"
+      ok, value = pcall -> require "#{item.path}.#{path}.#{name}"
+    else
+      print "try '#{item.path}.#{name}'"
+      ok, value = pcall -> require "#{item.path}.#{name}"
     return value if ok
 
-  error "locator could not find '#{name}'"
+  if path
+    error "locator could not find '#{path}.#{name}'"
+  else
+    error "locator could not find '#{name}'"
 
 -- works like Lapis's autoload, but
 --  includes trying sub-application paths & can be called to access a value
 autoload = (path, tab={}) ->
   return setmetatable tab, {
     __call: (t, name) ->
-      t[name] = try_require name, path
+      t[name] = locate name, path
       return t[name]
     __index: (t, name) ->
-      t[name] = try_require name, path
+      t[name] = locate name, path
       return t[name]
   }
 
@@ -85,8 +96,8 @@ registry = setmetatable {}, {
 -- public interface:
 --  functions: autoload, make_migrations
 --  tables: locate (locator alias), registry
-locator = setmetatable {
-  locate: locator, :autoload, :make_migrations, :registry
+return setmetatable {
+  :locate, :autoload, :make_migrations, :registry
 }, {
   __call: (t, here="") ->
     if "init" == here\sub -4
@@ -99,5 +110,3 @@ locator = setmetatable {
     t[name] = autoload name
     return t[name]
 }
-
-return locator
