@@ -28,19 +28,18 @@ for line in list:gmatch("[^\n]+") do
 end
 for _index_0 = 1, #config do
   local item = config[_index_0]
-  if item.remote and item.remote.push then
-    if "boolean" == type(item.remote.push) then
-      item.remote.push = item.remote.fetch
-    end
+  if item.remote and item.remote.fetch then
     if not (item.remote.branch) then
       item.remote.branch = "master"
     end
     if item.remote.name then
       if not (remotes[item.remote.name]) then
         execute("git remote add -f " .. tostring(item.remote.name) .. " " .. tostring(item.remote.fetch))
-        execute("git remote set-url --push " .. tostring(item.remote.name) .. " " .. tostring(item.remote.push))
+        if item.remote.push and not ("boolean" == type(item.remote.push)) then
+          execute("git remote set-url --push " .. tostring(item.remote.name) .. " " .. tostring(item.remote.push))
+        end
       end
     end
-    execute("git subtree push --prefix " .. tostring(item.path:gsub("%.", "/")) .. " " .. tostring(item.remote.push) .. " " .. tostring(item.remote.branch))
+    execute("git subtree add --prefix " .. tostring(item.path:gsub("%.", "/")) .. " " .. tostring(item.remote.fetch) .. " " .. tostring(item.remote.branch) .. " --squash")
   end
 end

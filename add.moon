@@ -24,16 +24,15 @@ for line in list\gmatch "[^\n]+"
   remotes[line] = true
 
 for item in *config
-  if item.remote and item.remote.push -- if configured to push
-    if "boolean" == type item.remote.push
-      item.remote.push = item.remote.fetch
+  if item.remote and item.remote.fetch -- if configured to pull
     unless item.remote.branch
       item.remote.branch = "master"
 
     if item.remote.name -- if we want a named remote
       unless remotes[item.remote.name] -- add it if needed
         execute "git remote add -f #{item.remote.name} #{item.remote.fetch}"
-        execute "git remote set-url --push #{item.remote.name} #{item.remote.push}"
+        if item.remote.push and not ("boolean" == type item.remote.push)
+          execute "git remote set-url --push #{item.remote.name} #{item.remote.push}"
 
     -- we actually ignore names with in-script usage..
-    execute "git subtree push --prefix #{item.path\gsub "%.", "/"} #{item.remote.push} #{item.remote.branch}"
+    execute "git subtree add --prefix #{item.path\gsub "%.", "/"} #{item.remote.fetch} #{item.remote.branch} --squash"
