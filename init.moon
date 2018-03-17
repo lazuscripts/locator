@@ -107,11 +107,11 @@ registry = setmetatable {}, {
 return setmetatable {
   :locate, :autoload, :make_migrations, :registry
 }, {
-  __call: (t, here="") ->
-    if "init" == here\sub -4
-      here = here\sub 1, -6
-    unless here\len! > 0
-      here = ""
+  __call: (t, here) ->
+    if here and here\find "%."
+      here = here\sub 1, here\len! - here\match(".*%.(.+)")\len! - 1
+    else
+      here = nil
     return autoload here
 
   __index: (t, name) ->
